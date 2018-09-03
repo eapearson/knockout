@@ -35,16 +35,15 @@ If you prefer to build the library yourself:
    Make sure you have [Node.js](http://nodejs.org/) installed on your workstation. This is only needed to _build_ Knockout from sources. Knockout itself has no dependency on Node.js once it is built (it works with any server technology or none). Now run:
 
    ```sh
-   npm install -g grunt-cli
    npm install
    ```
 
-   The first `npm` command sets up the popular [Grunt](http://gruntjs.com/) build tool. You might need to run this command with `sudo` if you're on Linux or Mac OS X, or in an Administrator command prompt on Windows. The second `npm` command fetches the remaining build dependencies.
+   The first `npm` command sets up the popular [Grunt](http://gruntjs.com/) build tool. You might need to run this command with `sudo` if you're on Linux or Mac OS X, or in an Administrator command prompt on Windows. 
 
 3. **Run the build tool**
 
    ```sh
-   grunt
+   ./node_modules/.bin/grunt
    ```
    Now you'll find the built files in `build/output/`.
 

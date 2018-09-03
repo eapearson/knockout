@@ -1,5 +1,6 @@
 /*global module:false*/
-module.exports = function(grunt) {
+module.exports = function (grunt) {
+    'use strict';
     var _ = grunt.util._;
 
     // Project configuration
@@ -12,13 +13,12 @@ module.exports = function(grunt) {
                 ' * (c) The Knockout.js team - <%= pkg.homepage %>\n' +
                 ' * License: <%= pkg.licenses[0].type %> (<%= pkg.licenses[0].url %>)\n' +
                 ' */\n\n',
-
         checktrailingspaces: {
             main: {
                 src: [
-                    "**/*.{js,html,css,bat,ps1,sh}",
-                    "!build/output/**",
-                    "!node_modules/**"
+                    '**/*.{js,html,css,bat,ps1,sh}',
+                    '!build/output/**',
+                    '!node_modules/**'
                 ],
                 filter: 'isFile'
             }
@@ -36,8 +36,8 @@ module.exports = function(grunt) {
             node: 'spec/runner.node.js'
         },
         testtypes: {
-            global: "spec/types/global",
-            module: "spec/types/module"
+            global: 'spec/types/global',
+            module: 'spec/types/module'
         }
     });
 
@@ -53,19 +53,19 @@ module.exports = function(grunt) {
     });
 
     var trailingSpaceRegex = /[ ]$/;
-    grunt.registerMultiTask('checktrailingspaces', 'checktrailingspaces', function() {
+    grunt.registerMultiTask('checktrailingspaces', 'checktrailingspaces', function () {
         var matches = [];
-        this.files[0].src.forEach(function(filepath) {
+        this.files[0].src.forEach(function (filepath) {
             var content = grunt.file.read(filepath),
                 lines = content.split(/\r*\n/);
-            lines.forEach(function(line, index) {
+            lines.forEach(function (line, index) {
                 if (trailingSpaceRegex.test(line)) {
                     matches.push([filepath, (index+1), line].join(':'));
                 }
             });
         });
         if (matches.length) {
-            grunt.log.error("The following files have trailing spaces that need to be cleaned up:");
+            grunt.log.error('The following files have trailing spaces that need to be cleaned up:');
             grunt.log.writeln(matches.join('\n'));
             return false;
         }
@@ -74,7 +74,7 @@ module.exports = function(grunt) {
     function getReferencedSources(sourceReferencesFilename) {
         // Returns the array of filenames referenced by a file like source-references.js
         var result;
-        global.knockoutDebugCallback = function(sources) { result = sources; };
+        global.knockoutDebugCallback = function (sources) { result = sources; };
         eval(grunt.file.read(sourceReferencesFilename));
         return result;
     }
@@ -89,7 +89,7 @@ module.exports = function(grunt) {
                 fragments + 'extern-post.js'
             ],
             flattenedSourceFilenames = Array.prototype.concat.apply([], sourceFilenames),
-            combinedSources = flattenedSourceFilenames.map(function(filename) {
+            combinedSources = flattenedSourceFilenames.map(function (filename) {
                 return grunt.file.read('./' + filename);
             }).join('');
 
@@ -125,7 +125,7 @@ module.exports = function(grunt) {
         });
     }
 
-    grunt.registerMultiTask('build', 'Build', function() {
+    grunt.registerMultiTask('build', 'Build', function () {
         if (!this.errorCount) {
             var output = this.data;
             if (this.target === 'debug') {
@@ -159,21 +159,21 @@ module.exports = function(grunt) {
         var done = this.async(),
             target = this.target;
 
-        grunt.util.spawn({ cmd: "tsc", args: ["-p", this.data] },
+        grunt.util.spawn({ cmd: './node_modules/.bin/tsc', args: ['-p', this.data] },
             function (error, result, code) {
                 grunt.log.writeln(result.stdout);
 
                 if (error)
                     grunt.log.error(result.stderr);
                 else
-                    grunt.log.ok("Knockout TypeScript " + target + " types validated!");
+                    grunt.log.ok('Knockout TypeScript ' + target + ' types validated!');
 
                 done(!error);
             }
         );
     });
 
-    grunt.registerTask('dist', function() {
+    grunt.registerTask('dist', function () {
         var version = grunt.config('pkg.version'),
             buildConfig = grunt.config('build'),
             distConfig = grunt.config('dist');
