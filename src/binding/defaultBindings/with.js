@@ -5,7 +5,6 @@
         ko.bindingHandlers[bindingKey] = {
             init: function (element, valueAccessor, allBindings, viewModel, bindingContext) {
                 var savedNodes, completeOnRender, needAsyncContext;
-
                 var as = allBindings.get('as');
                 var noChildContext = allBindings.get('noChildContext');
                 var withOptions = {
@@ -28,7 +27,7 @@
 
                 ko.computed(function () {
                     var value =  ko.utils.unwrapObservable(valueAccessor());
-                    var shouldDisplay = (value === null || typeof value === 'undefined');
+                    var shouldDisplay = !(value === null || typeof value === 'undefined');
                     var isFirstRender = !savedNodes;
 
                     // Save a copy of the inner nodes on the initial update, but only if we have dependencies.
