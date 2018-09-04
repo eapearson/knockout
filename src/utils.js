@@ -48,20 +48,16 @@
         // Note that, since IE 10 does not support conditional comments, the following logic only detects IE < 10.
         // Currently this is by design, since IE 10+ behaves correctly when treated as a standard browser.
         // If there is a future need to detect specific versions of IE10+, we will amend this.
-        var ieVersion;
-        function findIEVersion() {
-            var version = 3;
-            var div = document.createElement('div');
+        var ieVersion = document && (function () {
+            var version = 3, div = document.createElement('div'), iElems = div.getElementsByTagName('i');
 
             // Keep constructing conditional HTML blocks until we hit one that resolves to an empty fragment
-            do {
-                div.innerHTML = '<!--[if gt IE ' + (++version) + ']><i></i><![endif]-->';
-            } while (div.getElementsByTagName('i'));
-            return version > 4 ? version - 1: undefined;
-        }
-        if (document) {
-            ieVersion = findIEVersion();
-        }
+            while (
+                div.innerHTML = '<!--[if gt IE ' + (++version) + ']><i></i><![endif]-->',
+                iElems[0]
+            ) {}
+            return version > 4 ? version : undefined;
+        }());
         var isIe6 = ieVersion === 6,
             isIe7 = ieVersion === 7;
 
@@ -256,10 +252,11 @@
                 if (nodesToReplaceArray.length > 0) {
                     var insertionPoint = nodesToReplaceArray[0];
                     var parent = insertionPoint.parentNode;
-                    for (var i = 0, j = newNodesArray.length; i < j; i++) {
+                    var i;
+                    for (i = 0, j = newNodesArray.length; i < j; i++) {
                         parent.insertBefore(newNodesArray[i], insertionPoint);
                     }
-                    for (var i = 0, j = nodesToReplaceArray.length; i < j; i++) {
+                    for (i = 0, j = nodesToReplaceArray.length; i < j; i++) {
                         ko.removeNode(nodesToReplaceArray[i]);
                     }
                 }
@@ -313,7 +310,7 @@
             },
 
             setOptionNodeSelectionState: function (optionNode, isSelected) {
-                // IE6 sometimes throws "unknown error" if you try to write to .selected directly, whereas Firefox struggles with setAttribute. Pick one based on browser.
+            // IE6 sometimes throws "unknown error" if you try to write to .selected directly, whereas Firefox struggles with setAttribute. Pick one based on browser.
                 if (ieVersion < 7) {
                     optionNode.setAttribute('selected', isSelected);
                 } else {
@@ -324,6 +321,7 @@
             // TODO: remove all usage of stringTrim.
             // The falsy test for string is due to usage which allows trimming of null values; this should
             // be solved at the source, not here!
+
             stringTrim: function (string) {
                 if (string) {
                     return string.trim();
@@ -638,4 +636,4 @@
     ko.exportSymbol('utils.addOrRemoveItem', ko.utils.addOrRemoveItem);
     ko.exportSymbol('utils.setTextContent', ko.utils.setTextContent);
     ko.exportSymbol('unwrap', ko.utils.unwrapObservable); // Convenient shorthand, because this is used so commonly
-}());
+})();
