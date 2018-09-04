@@ -1,6 +1,12 @@
-/*global module:false*/
+/*eslint-env node*/
+/*eslint strict: ['error', 'global'] */
+/*global module:false, global*/
+// var process = require('process');
+'use strict';
+function println(str) {
+    process.stdout.write(str + '\n');
+}
 module.exports = function (grunt) {
-    'use strict';
     var _ = grunt.util._;
 
     // Project configuration
@@ -113,7 +119,7 @@ module.exports = function (grunt) {
             output_wrapper: '(function() {%output%})();'
         };
         grunt.log.write('Compiling...');
-        cc.compile('/**@const*/var DEBUG=false;' + getCombinedSources(), options, function (err, stdout, stderr) {
+        cc.compile('/**@const*/var DEBUG=false;' + getCombinedSources(), options, function (err, stdout) {
             if (err) {
                 grunt.log.error(err);
                 done(false);
@@ -180,15 +186,15 @@ module.exports = function (grunt) {
         grunt.file.copy(buildConfig.debug, distConfig.debug);
         grunt.file.copy(buildConfig.min, distConfig.min);
 
-        console.log('To publish, run:');
-        console.log('    git add bower.json');
-        console.log('    git add -f ' + distConfig.debug);
-        console.log('    git add -f ' + distConfig.min);
-        console.log('    git checkout head');
-        console.log('    git commit -m \'Version ' + version + ' for distribution\'');
-        console.log('    git tag -a v' + version + ' -m \'Add tag v' + version + '\'');
-        console.log('    git checkout master');
-        console.log('    git push origin --tags');
+        println('To publish, run:');
+        println('    git add bower.json');
+        println('    git add -f ' + distConfig.debug);
+        println('    git add -f ' + distConfig.min);
+        println('    git checkout head');
+        println('    git commit -m \'Version ' + version + ' for distribution\'');
+        println('    git tag -a v' + version + ' -m \'Add tag v' + version + '\'');
+        println('    git checkout master');
+        println('    git push origin --tags');
     });
 
     // Default task.
