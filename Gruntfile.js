@@ -9,6 +9,8 @@ function println(str) {
 module.exports = function (grunt) {
     var _ = grunt.util._;
 
+    grunt.loadNpmTasks('grunt-contrib-uglify');
+
     // Project configuration
     grunt.initConfig({
         // Metadata
@@ -31,11 +33,22 @@ module.exports = function (grunt) {
         },
         build: {
             debug: './build/output/knockout-latest.debug.js',
+            nondebug: './build/output/knockout-latest.nondebug.js',
             min: './build/output/knockout-latest.js'
         },
         dist: {
-            debug: './dist/knockout.debug.js',
-            min: './dist/knockout.js'
+            debug: {
+                from: './build/output/knockout-latest.debug.js',
+                to: './dist/knockout.debug.js'
+            },
+            nondebug: {
+                from: './build/output/knockout-latest.nondebug.js',
+                to: './dist/knockout.js'
+            },
+            min: {
+                from: './build/output/knockout-latest.min.js',
+                to: './dist/knockout.min.js'
+            }
         },
         test: {
             phantomjs: 'spec/runner.phantom.js',
@@ -44,8 +57,47 @@ module.exports = function (grunt) {
         testtypes: {
             global: 'spec/types/global',
             module: 'spec/types/module'
+        },
+        uglify: {
+            build: {
+                options: {
+                    ie8: false,
+                    mangle: {
+                        // properties: {
+                        //     // would be nice to enable this, but need to be very careful
+                        //     // with properties and mangle; quote them to not be mangled.
+                        //     // since knockout is very liberal with dynamically adding properties
+                        //     // by string names, this is tricky ... all such added properties need
+                        //     // to always be referenced by their string property. The codebase
+                        //     // is already constructed this way, but it is awkward and hard to
+                        //     // maintain.
+                        //     // TODO: tests should use the minified code not the debug code, in order
+                        //     // to catch such errors.
+                        // }
+                    },
+                    beautify: false,
+                    compress: {
+                        ie8: false,
+                        warnings: false,
+                        conditionals: true,
+                        unused: true,
+                        comparisons: true,
+                        sequences: true,
+                        dead_code: true,
+                        evaluate: true,
+                        if_return: true,
+                        join_vars: true,
+                        negate_iife: false,
+                        passes: 3
+                    }
+                },
+                files: {
+                    'build/output/knockout-latest.min.js': ['build/output/knockout-latest.nondebug.js']
+                }
+            }
         }
     });
+
 
     grunt.registerTask('clean', 'Clean up output files.', function (target) {
         var output = grunt.config('build');
@@ -58,6 +110,7 @@ module.exports = function (grunt) {
         return !this.errorCount;
     });
 
+    // TODO: change to eslint check; this is rather arbitrary and minor.
     var trailingSpaceRegex = /[ ]$/;
     grunt.registerMultiTask('checktrailingspaces', 'checktrailingspaces', function () {
         var matches = [];
@@ -85,6 +138,7 @@ module.exports = function (grunt) {
         return result;
     }
 
+    // TODO: use a real packager.
     function getCombinedSources() {
         var fragments = grunt.config('fragments'),
             sourceFilenames = [
@@ -112,6 +166,35 @@ module.exports = function (grunt) {
         grunt.file.write(output, source.join('').replace(/\r\n/g, '\n'));
     }
 
+    function buildNonDebug(output) {
+        var source = [];
+        source.push(grunt.config('banner'));
+        source.push('(function(){\n');
+        source.push('var DEBUG=false;\n');
+        source.push(getCombinedSources());
+        source.push('})();\n');
+        grunt.file.write(output, source.join('').replace(/\r\n/g, '\n'));
+    }
+
+    // function buildMin(output, done) {
+    //     var cc = require('closure-compiler');
+    //     var options = {
+    //         compilation_level: 'ADVANCED_OPTIMIZATIONS',
+    //         output_wrapper: '(function() {%output%})();'
+    //     };
+    //     grunt.log.write('Compiling...');
+    //     cc.compile('/**@const*/var DEBUG=false;' + getCombinedSources(), options, function (err, stdout) {
+    //         if (err) {
+    //             grunt.log.error(err);
+    //             done(false);
+    //         } else {
+    //             grunt.log.ok();
+    //             grunt.file.write(output, (grunt.config('banner') + stdout).replace(/\r\n/g, '\n'));
+    //             done(true);
+    //         }
+    //     });
+    // }
+
     function buildMin(output, done) {
         var cc = require('closure-compiler');
         var options = {
@@ -131,11 +214,17 @@ module.exports = function (grunt) {
         });
     }
 
+    // grunt.registerMultiTask('uglify', 'Minifying via uglify', function () {
+    //     grunt.log.writeln(this.target + ': ' + this.data);
+    // });
+
     grunt.registerMultiTask('build', 'Build', function () {
         if (!this.errorCount) {
             var output = this.data;
             if (this.target === 'debug') {
                 buildDebug(output);
+            } else if (this.target === 'nondebug') {
+                buildNonDebug(output);
             } else if (this.target === 'min') {
                 buildMin(output, this.async());
             }
@@ -181,15 +270,16 @@ module.exports = function (grunt) {
 
     grunt.registerTask('dist', function () {
         var version = grunt.config('pkg.version'),
-            buildConfig = grunt.config('build'),
             distConfig = grunt.config('dist');
-        grunt.file.copy(buildConfig.debug, distConfig.debug);
-        grunt.file.copy(buildConfig.min, distConfig.min);
+        grunt.file.copy(distConfig.debug.from, distConfig.debug.to);
+        grunt.file.copy(distConfig.nondebug.from, distConfig.nondebug.to);
+        grunt.file.copy(distConfig.min.from, distConfig.min.to);
 
         println('To publish, run:');
         println('    git add bower.json');
-        println('    git add -f ' + distConfig.debug);
-        println('    git add -f ' + distConfig.min);
+        println('    git add -f ' + distConfig.debug.to);
+        println('    git add -f ' + distConfig.nondebug.to);
+        println('    git add -f ' + distConfig.min.to);
         println('    git checkout head');
         println('    git commit -m \'Version ' + version + ' for distribution\'');
         println('    git tag -a v' + version + ' -m \'Add tag v' + version + '\'');
@@ -198,5 +288,5 @@ module.exports = function (grunt) {
     });
 
     // Default task.
-    grunt.registerTask('default', ['clean', 'checktrailingspaces', 'build', 'test', 'testtypes']);
+    grunt.registerTask('default', ['clean', 'checktrailingspaces', 'build', 'uglify:build', 'test', 'testtypes']);
 };
