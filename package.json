@@ -2,7 +2,7 @@
   "name": "knockout",
   "description": "Knockout makes it easier to create rich, responsive UIs with JavaScript",
   "homepage": "http://knockoutjs.com/",
-  "version": "3.5.1-beta4",
+  "version": "3.5.1-beta5",
   "license": "MIT",
   "author": "The Knockout.js team",
   "main": "build/output/knockout-latest.js",
@@ -38,6 +38,7 @@
   "devDependencies": {
     "grunt": "1.0.3",
     "grunt-cli": "1.3.1",
+    "grunt-contrib-uglify": "4.0.0",
     "closure-compiler": "0.2.12",
     "typescript": "3.0.3"
   }
