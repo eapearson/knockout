@@ -1,4 +1,4 @@
-console.log("Running Knockout tests in Node.js");
+console.log('Running Knockout tests in Node.js');
 
 var fs = require('fs');
 var jasmine = require('./lib/jasmine-1.2.0/jasmine');
@@ -16,16 +16,16 @@ if (process.argv.length > 2 && process.argv[2] == '--source') {
     // equivalent of  ../build/knockout-raw.js
     global.DEBUG = true;
     global.ko = global.koExports = {};
-    global.knockoutDebugCallback = function(sources) {
+    global.knockoutDebugCallback = function (sources) {
         sources.unshift('build/fragments/extern-pre.js');
         sources.push('build/fragments/extern-post.js');
-        eval(sources.reduce(function(all, source) {
+        eval(sources.reduce(function (all, source) {
             return all + '\n' + fs.readFileSync(source);
         }, ''));
     };
     require('../build/fragments/source-references');
 } else {
-    global.ko = require('../build/output/knockout-latest.js');
+    global.ko = require('../build/output/knockout-latest.min.js');
 }
 
 // reference behaviors that should work out of browser
@@ -68,7 +68,7 @@ env.addReporter({
                 });
             });
         });
-        console.log("Total:" + results.totalCount + " Passed:" + results.passedCount + " Failed:" + results.failedCount);
+        console.log('Total:' + results.totalCount + ' Passed:' + results.passedCount + ' Failed:' + results.failedCount);
         process.exit(results.failedCount);
     }
 });
