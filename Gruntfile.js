@@ -9,7 +9,7 @@ function println(str) {
 module.exports = function (grunt) {
     var _ = grunt.util._;
 
-    grunt.loadNpmTasks('grunt-contrib-uglify');
+    grunt.loadNpmTasks('grunt-contrib-uglify-es');
 
     // Project configuration
     grunt.initConfig({
@@ -51,7 +51,7 @@ module.exports = function (grunt) {
             }
         },
         test: {
-            phantomjs: 'spec/runner.phantom.js',
+            // phantomjs: 'spec/runner.phantom.js',
             node: 'spec/runner.node.js'
         },
         testtypes: {
@@ -199,7 +199,8 @@ module.exports = function (grunt) {
         var cc = require('closure-compiler');
         var options = {
             compilation_level: 'ADVANCED_OPTIMIZATIONS',
-            output_wrapper: '(function() {%output%})();'
+            output_wrapper: '(function() {%output%})();',
+            language_in: 'ECMASCRIPT6_STRICT'
         };
         grunt.log.write('Compiling...');
         cc.compile('/**@const*/var DEBUG=false;' + getCombinedSources(), options, function (err, stdout) {
