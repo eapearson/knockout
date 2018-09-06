@@ -47,8 +47,8 @@
                         if (ifCondition.isActive()) {
                         // this next line caused much recursion when children are recursively build components,
                         // and the if condition switches from true to false.
-                        // childContext = bindingContext['extend'](function() { ifCondition(); return null; });
-                            childContext = bindingContext;
+                            childContext = bindingContext['extend'](function () { ifCondition(); return null; });
+                            // childContext = bindingContext;
                         } else {
                             childContext = bindingContext;
                         }
