@@ -1,4 +1,4 @@
-(function() {
+(function () {
     function getParam(name) {
         var match = location.search.match(RegExp('[?&]' + name + '=([^&]+)'));
         if (match) {
@@ -9,12 +9,12 @@
     var dependencies = {
         // All specs should pass with or without jQuery+Modernizr being referenced
         jquery: {
-            url: "http://code.jquery.com/jquery-3.1.1.js",
+            url: 'http://code.jquery.com/jquery-3.1.1.js',
             include: false,
-            versionString: "3.1.1"
+            versionString: '3.1.1'
         },
         modernizr: {
-            url: "http://modernizr.com/downloads/modernizr-latest.js",
+            url: 'http://modernizr.com/downloads/modernizr-latest.js',
             include: false
         },
         // Knockout polyfills
@@ -25,11 +25,11 @@
             // for IE 6-8 in the next major version, in which case this is all irrelevant).
             // It doesn't really matter very much, because essentially everyone who targets IE6-8 is also
             // using jQuery, and if you are using jQuery then you don't need innerShiv.
-            url: "lib/innershiv.js",
+            url: 'lib/innershiv.js',
             include: true
         },
         json2: {
-            url: "lib/json2.js",
+            url: 'lib/json2.js',
             include: true
         }
     };
@@ -39,8 +39,8 @@
             url = dependency && dependency.url;
         if (url) {
             var shouldInclude = getParam(name);
-            if ((dependency.include || shouldInclude) && shouldInclude !== "0" && shouldInclude !== "false") {
-                if (shouldInclude && shouldInclude !== "1" && shouldInclude !== "true") {
+            if ((dependency.include || shouldInclude) && shouldInclude !== '0' && shouldInclude !== 'false') {
+                if (shouldInclude && shouldInclude !== '1' && shouldInclude !== 'true') {
                     url = url.replace(dependency.versionString || 'latest', shouldInclude);
                 }
                 jasmine.addScriptReference(url);
@@ -51,6 +51,6 @@
     // By default, we run the tests against knockout-raw.js, but you can specify an alternative test
     // subject as a querystring parameter, e.g., runner.html?src=build/output/knockout-latest.js.
     // This is used by our automated test runners (PhantomJS and Testling CI).
-    var koFilename = getParam('src') || "build/knockout-raw.js";
-    jasmine.addScriptReference("../" + koFilename);
+    var koFilename = getParam('src') || 'build/knockout-raw.js';
+    jasmine.addScriptReference('../' + koFilename);
 })();

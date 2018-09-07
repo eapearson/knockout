@@ -1,5 +1,5 @@
 /*eslint-env node, jasmine*/
-/*global ko*/
+/*global ko, testNode*/
 describe('Deferred bindings', function () {
     'use strict';
     var bindingSpy;
@@ -156,7 +156,48 @@ describe('Deferred bindings', function () {
 
     it('Should update "if" binding before descendant bindings', function () {
         // Based on example at https://github.com/knockout/knockout/pull/2226
-        testNode.innerHTML = '<div data-bind="if: hasAddress()"><span data-bind="text: streetNumber().toLowerCase()"></span><span data-bind="text: street().toLowerCase()"></span></div>';
+        // testNode.innerHTML = '<div data-bind="if: hasAddress()"><span data-bind="text: streetNumber().toLowerCase()"></span><span data-bind="text: street().toLowerCase()"></span></div>';
+        testNode.innerHTML = `
+            <div data-bind="if: hasAddress()">
+                <span data-bind="text: streetNumber().toLowerCase()"></span>
+                <span data-bind="text: street().toLowerCase()"></span>
+            </div>`;
+        var vm = {
+            street: ko.observable(),
+            streetNumber: ko.observable(),
+            hasAddress: ko.pureComputed(function () { return vm.streetNumber() && vm.street(); })
+        };
+
+        // Initially no child nodes, because address resolves to falsy.
+        ko.applyBindings(vm, testNode);
+        jasmine.Clock.tick(1);
+        expect(testNode.childNodes[0]).toContainText('');
+
+        // Then populate the address components, so the address should resolve
+        // to an object; child nodes should have text after the async loop
+        // completes one cycle.
+        // TODO: doesn't this depend on the microtask implementation?
+        vm.street('my street');
+        vm.streetNumber('123');
+        jasmine.Clock.tick(1);
+        expect(testNode.childNodes[0]).toContainText('123my street');
+
+        // Un-setting the address components, the address should resolve to false again,
+        // and on the next loop iteration the 'if' should have detected the
+        // absence of hasAddress() and stamped out the child nodes to ... nothing.
+        vm.street(null);
+        vm.streetNumber(null);
+        jasmine.Clock.tick(1);
+        expect(testNode.childNodes[0]).toContainText('');
+    });
+
+    it('Should update "with" binding before descendant bindings', function () {
+        // Based on example at https://github.com/knockout/knockout/pull/2226
+        testNode.innerHTML = `
+            <div data-bind="with: hasAddress()">
+                <span data-bind="text: $parent.streetNumber().toLowerCase()">
+                </span><span data-bind="text: $parent.street().toLowerCase()"></span>
+            </div>`;
         var vm = {
             street: ko.observable(),
             streetNumber: ko.observable(),
@@ -166,44 +207,17 @@ describe('Deferred bindings', function () {
         ko.applyBindings(vm, testNode);
         jasmine.Clock.tick(1);
         expect(testNode.childNodes[0]).toContainText('');
-        console.log('here 1');
 
         vm.street('my street');
         vm.streetNumber('123');
         jasmine.Clock.tick(1);
         expect(testNode.childNodes[0]).toContainText('123my street');
-        console.log('here 2');
 
         vm.street(null);
         vm.streetNumber(null);
         jasmine.Clock.tick(1);
         expect(testNode.childNodes[0]).toContainText('');
-        console.log('here 3');
     });
-
-    // it('Should update "with" binding before descendant bindings', function () {
-    //     // Based on example at https://github.com/knockout/knockout/pull/2226
-    //     testNode.innerHTML = '<div data-bind="with: hasAddress()"><span data-bind="text: $parent.streetNumber().toLowerCase()"></span><span data-bind="text: $parent.street().toLowerCase()"></span></div>';
-    //     var vm = {
-    //         street: ko.observable(),
-    //         streetNumber: ko.observable(),
-    //         hasAddress: ko.pureComputed(function () { return vm.streetNumber() && vm.street(); })
-    //     };
-
-    //     ko.applyBindings(vm, testNode);
-    //     jasmine.Clock.tick(1);
-    //     expect(testNode.childNodes[0]).toContainText('');
-
-    //     vm.street('my street');
-    //     vm.streetNumber('123');
-    //     jasmine.Clock.tick(1);
-    //     expect(testNode.childNodes[0]).toContainText('123my street');
-
-    //     vm.street(null);
-    //     vm.streetNumber(null);
-    //     jasmine.Clock.tick(1);
-    //     expect(testNode.childNodes[0]).toContainText('');
-    // });
 
     it('Should leave descendant nodes unchanged if the value is truthy and remains truthy when changed', function () {
         var someItem = ko.observable(true);

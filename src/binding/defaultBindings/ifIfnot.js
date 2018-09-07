@@ -10,23 +10,30 @@
     function makeIfBinding(bindingKey, isNot) {
         ko.bindingHandlers[bindingKey] = {
             'init': function (element, valueAccessor, allBindings, viewModel, bindingContext) {
-                var savedNodes;
+                let savedNodes;
 
-                var ifCondition = ko.computed(function () {
-                    var unwrapped = ko.utils.unwrapObservable(valueAccessor());
+                const ifCondition = ko.computed(function () {
+                    const unwrapped = ko.utils.unwrapObservable(valueAccessor());
                     // note that this coerces falsy to boolean
                     return isNot ? !unwrapped : !!unwrapped;
                 }, null, {
                     disposeWhenNodeIsRemoved: element
                 });
 
-                var completeOnRender = allBindings.get('completeOn') == 'render';
-                var needAsyncContext = completeOnRender || allBindings['has'](ko.bindingEvent.descendantsComplete);
+                const completeOnRender = allBindings.get('completeOn') == 'render';
+                const needAsyncContext = completeOnRender || allBindings.has(ko.bindingEvent.descendantsComplete);
+
+                // const as = allBindings.get('as');
+                // const noChildContext = allBindings.get('noChildContext');
+                // const ifOptions = {
+                //     as: as,
+                //     noChildContext: noChildContext
+                // };
 
                 ko.computed(function () {
-                    var value = ifCondition();
+                    const value = ifCondition();
                     // and this too.
-                    var isFirstRender = !savedNodes;
+                    const isFirstRender = !savedNodes;
 
                     // Save a copy of the inner nodes on the initial update, but only if we have dependencies.
                     if (isFirstRender && ko.computedContext.getDependenciesCount()) {
@@ -45,13 +52,36 @@
 
                         var childContext;
                         if (ifCondition.isActive()) {
-                        // this next line caused much recursion when children recursively build components,
-                        // and the if condition switches from true to false.
-                            childContext = bindingContext['extend'](function () { ifCondition(); return null; });
-                            // childContext = bindingContext;
+                            // this next line caused much recursion when children recursively build components,
+                            // and the if condition switches from true to false.
+                            // childContext = bindingContext['extend'](function () { ifCondition(); return null; });
+                            // if (needAsyncContext) {
+                            //     console.log('here');
+                            // }
+                            // childContext = bindingContext.extend(function () {
+                            //     ifCondition();
+                            //     return null;
+                            // });
+                            // childContext = bindingContext.extend(() => {
+                            //     return {
+                            //         $it: ifCondition()
+                            //     };
+                            // });
+                            childContext = bindingContext;
                         } else {
                             childContext = bindingContext;
                         }
+
+                        // the 'with' way; a new context effectively blocks the current context; doesn't expose
+                        // the context properties;
+                        // const childContext = bindingContext.createChildContext(typeof value == 'function' ? value : valueAccessor, ifOptions);
+                        // ko.applyBindingsToDescendants(childContext, element);
+
+                        // the 'let' way; inherit context with whatever is provided to let as an extension;
+                        // const innerContext = bindingContext.extend(valueAccessor);
+                        // ko.applyBindingsToDescendants(innerContext, element);
+
+                        // clearly 'if' should be more like 'let'.
 
                         ko.applyBindingsToDescendants(childContext, element);
                     } else {

@@ -1,11 +1,13 @@
-describe('Components: Component binding', function() {
-
+/*eslint-env node, jasmine*/
+/*global ko, testNode*/
+describe('Components: Component binding', function () {
+    'use strict';
     var testComponentName = 'test-component',
         testComponentBindingValue,
         testComponentParams,
         outerViewModel;
 
-    beforeEach(function() {
+    beforeEach(function () {
         jasmine.Clock.useMockForTasks();
         jasmine.prepareTestNode();
         testComponentParams = {};
@@ -14,50 +16,50 @@ describe('Components: Component binding', function() {
         testNode.innerHTML = '<div data-bind="component: testComponentBindingValue"></div>';
     });
 
-    afterEach(function() {
+    afterEach(function () {
         expect(ko.tasks.resetForTesting()).toEqual(0);
         jasmine.Clock.reset();
         ko.components.unregister(testComponentName);
     });
 
-    it('Throws if no name is specified (name provided directly)', function() {
+    it('Throws if no name is specified (name provided directly)', function () {
         testNode.innerHTML = '<div data-bind="component: \'\'"></div>';
-        expect(function() { ko.applyBindings(null, testNode); })
+        expect(function () { ko.applyBindings(null, testNode); })
             .toThrowContaining('No component name specified');
     });
 
-    it('Throws if no name is specified (using options object)', function() {
+    it('Throws if no name is specified (using options object)', function () {
         delete testComponentBindingValue.name;
-        expect(function() { ko.applyBindings(outerViewModel, testNode); })
+        expect(function () { ko.applyBindings(outerViewModel, testNode); })
             .toThrowContaining('No component name specified');
     });
 
-    it('Throws if the component name is unknown', function() {
-        expect(function() {
+    it('Throws if the component name is unknown', function () {
+        expect(function () {
             ko.applyBindings(outerViewModel, testNode);
             jasmine.Clock.tick(1);
-        }).toThrow("Unknown component 'test-component'");
+        }).toThrow('Unknown component \'test-component\'');
     });
 
-    it('Throws if the component definition has no template', function() {
+    it('Throws if the component definition has no template', function () {
         ko.components.register(testComponentName, {});
-        expect(function() {
+        expect(function () {
             ko.applyBindings(outerViewModel, testNode);
             jasmine.Clock.tick(1);
-        }).toThrow("Component 'test-component' has no template");
+        }).toThrow('Component \'test-component\' has no template');
     });
 
-    it('Controls descendant bindings', function() {
+    it('Controls descendant bindings', function () {
         ko.components.register(testComponentName, { template: 'x' });
         testNode.innerHTML = '<div data-bind="if: true, component: $data"></div>';
-        expect(function() { ko.applyBindings(testComponentName, testNode); })
+        expect(function () { ko.applyBindings(testComponentName, testNode); })
             .toThrowContaining('Multiple bindings (if and component) are trying to control descendant bindings of the same element.');
 
         // Even though ko.applyBindings threw an exception, the component still gets bound (asynchronously)
         jasmine.Clock.tick(1);
     });
 
-    it('Replaces the element\'s contents with a clone of the template', function() {
+    it('Replaces the element\'s contents with a clone of the template', function () {
         var testTemplate = document.createDocumentFragment();
         testTemplate.appendChild(document.createElement('div'));
         testTemplate.appendChild(document.createTextNode(' '));
@@ -77,11 +79,11 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0].childNodes[0]).not.toBe(testTemplate[0]);
     });
 
-    it('Passes params and componentInfo (with prepopulated element and templateNodes) to the component\'s viewmodel factory', function() {
+    it('Passes params and componentInfo (with prepopulated element and templateNodes) to the component\'s viewmodel factory', function () {
         var componentConfig = {
             template: '<div data-bind="text: 123">I have been prepopulated and not bound yet</div>',
             viewModel: {
-                createViewModel: function(params, componentInfo) {
+                createViewModel: function (params, componentInfo) {
                     expect(componentInfo.element).toContainText('I have been prepopulated and not bound yet');
                     expect(params).toBe(testComponentParams);
                     expect(componentInfo.templateNodes.length).toEqual(3);
@@ -108,7 +110,7 @@ describe('Components: Component binding', function() {
         expect(testNode).toContainText('From the viewmodel');
     });
 
-    it('Handles absence of viewmodel by using the params', function() {
+    it('Handles absence of viewmodel by using the params', function () {
         ko.components.register(testComponentName, { template: '<div data-bind="text: myvalue"></div>' });
         testComponentParams.myvalue = 'some parameter value';
         ko.applyBindings(outerViewModel, testNode);
@@ -117,11 +119,11 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainHtml('<div data-bind="text: myvalue">some parameter value</div>');
     });
 
-    it('Injects and binds the component synchronously if it is flagged as synchronous and loads synchronously', function() {
+    it('Injects and binds the component synchronously if it is flagged as synchronous and loads synchronously', function () {
         ko.components.register(testComponentName, {
             synchronous: true,
             template: '<div data-bind="text: myvalue"></div>',
-            viewModel: function() { this.myvalue = 123; }
+            viewModel: function () { this.myvalue = 123; }
         });
 
         // Notice the absence of any 'jasmine.Clock.tick' call here. This is synchronous.
@@ -129,14 +131,13 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainHtml('<div data-bind="text: myvalue">123</div>');
     });
 
-    it('Injects and binds the component synchronously if it is flagged as synchronous and already cached, even if it previously loaded asynchronously', function() {
+    it('Injects and binds the component synchronously if it is flagged as synchronous and already cached, even if it previously loaded asynchronously', function () {
         // Set up a component that loads asynchronously, but is flagged as being injectable synchronously
         this.restoreAfter(window, 'require');
-        var requireCallbacks = {};
-        window.require = function(moduleNames, callback) {
+        window.require = function (moduleNames, callback) {
             expect(moduleNames[0]).toBe('testViewModelModule');
-            setTimeout(function() {
-                var constructor = function(params) {
+            setTimeout(function () {
+                var constructor = function (params) {
                     this.viewModelProperty = params;
                 };
                 callback(constructor);
@@ -166,7 +167,7 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainText('firstsecond', /* ignoreSpaces */ true); // Ignore spaces because old-IE is inconsistent
     });
 
-    it('Creates a binding context with the correct parent', function() {
+    it('Creates a binding context with the correct parent', function () {
         ko.components.register(testComponentName, {
             template: 'Parent is outer view model: <span data-bind="text: $parent.isOuterViewModel"></span>'
         });
@@ -176,7 +177,7 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainText('Parent is outer view model: true');
     });
 
-    it('Creates a binding context with $componentTemplateNodes giving the original child nodes', function() {
+    it('Creates a binding context with $componentTemplateNodes giving the original child nodes', function () {
         ko.components.register(testComponentName, {
             template: 'Start<span data-bind="template: { nodes: $componentTemplateNodes }"></span>End'
         });
@@ -187,8 +188,8 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainHtml('start<span data-bind="template: { nodes: $componenttemplatenodes }"><em>original</em> child nodes</span>end');
     });
 
-    it('Creates a binding context with $component to reference the closest component viewmodel', function() {
-        this.after(function() {
+    it('Creates a binding context with $component to reference the closest component viewmodel', function () {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
@@ -198,13 +199,13 @@ describe('Components: Component binding', function() {
                           + 'inside component with property <!-- ko text: $component.componentProp --><!-- /ko -->. '
                           + '<div data-bind="component: \'sub-component\'"></div>'
                       + '</span>',
-            viewModel: function() { return { componentProp: 456 }; }
+            viewModel: function () { return { componentProp: 456 }; }
         });
 
         // See it works with nesting - $component always refers to the *closest* component root
         ko.components.register('sub-component', {
             template: 'Now in sub-component with property <!-- ko text: $component.componentProp --><!-- /ko -->.',
-            viewModel: function() { return { componentProp: 789 }; }
+            viewModel: function () { return { componentProp: 789 }; }
         });
 
         ko.applyBindings(outerViewModel, testNode);
@@ -213,11 +214,11 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainText('In child context 123, inside component with property 456. Now in sub-component with property 789.', /* ignoreSpaces */ true); // Ignore spaces because old-IE is inconsistent
     });
 
-    it('Calls a koDescendantsComplete function on the component viewmodel after the component is rendered', function() {
+    it('Calls a koDescendantsComplete function on the component viewmodel after the component is rendered', function () {
         var renderedCount = 0;
         ko.components.register(testComponentName, {
             template: '<div data-bind="text: myvalue"></div>',
-            viewModel: function() {
+            viewModel: function () {
                 this.myvalue = 123;
                 this.koDescendantsComplete = function (element) {
                     expect(element).toBe(testNode.childNodes[0]);
@@ -234,15 +235,15 @@ describe('Components: Component binding', function() {
         expect(renderedCount).toBe(1);
     });
 
-    it('Inner components\' koDescendantsComplete occurs before the outer component\'s', function() {
-        this.after(function() {
+    it('Inner components\' koDescendantsComplete occurs before the outer component\'s', function () {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
         var renderedComponents = [];
         ko.components.register(testComponentName, {
             template: 'x<div data-bind="component: { name: \'sub-component\', params: 1 }"></div><div data-bind="component: { name: \'sub-component\', params: 2 }"></div>x',
-            viewModel: function() {
+            viewModel: function () {
                 this.koDescendantsComplete = function (element) {
                     expect(element).toContainText('x12x', /* ignoreSpaces */ true); // Ignore spaces because old-IE is inconsistent
                     renderedComponents.push(testComponentName);
@@ -252,7 +253,7 @@ describe('Components: Component binding', function() {
 
         ko.components.register('sub-component', {
             template: '<span data-bind="text: myvalue"></span>',
-            viewModel: function(params) {
+            viewModel: function (params) {
                 this.myvalue = params;
                 this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); };
             }
@@ -265,8 +266,8 @@ describe('Components: Component binding', function() {
         expect(renderedComponents).toEqual([ 'sub-component1', 'sub-component2', 'test-component' ]);
     });
 
-    it('koDescendantsComplete occurs after all inner components even if outer component is rendered synchronously', function() {
-        this.after(function() {
+    it('koDescendantsComplete occurs after all inner components even if outer component is rendered synchronously', function () {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
@@ -274,7 +275,7 @@ describe('Components: Component binding', function() {
         ko.components.register(testComponentName, {
             synchronous: true,
             template: 'x<div data-bind="component: { name: \'sub-component\', params: 1 }"></div><div data-bind="component: { name: \'sub-component\', params: 2 }"></div>x',
-            viewModel: function() {
+            viewModel: function () {
                 this.koDescendantsComplete = function (element) {
                     expect(element).toBe(testNode.childNodes[0]);
                     expect(element).toContainText('x12x', /* ignoreSpaces */ true);
@@ -285,7 +286,7 @@ describe('Components: Component binding', function() {
 
         ko.components.register('sub-component', {
             template: '<span data-bind="text: myvalue"></span>',
-            viewModel: function(params) {
+            viewModel: function (params) {
                 this.myvalue = params;
                 this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); };
             }
@@ -300,8 +301,8 @@ describe('Components: Component binding', function() {
         expect(testNode.childNodes[0]).toContainText('x12x', /* ignoreSpaces */ true); // Ignore spaces because old-IE is inconsistent
     });
 
-    it('When all components are rendered synchronously, inner components\' koDescendantsComplete occurs before the outer component\'s', function() {
-        this.after(function() {
+    it('When all components are rendered synchronously, inner components\' koDescendantsComplete occurs before the outer component\'s', function () {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
@@ -309,35 +310,35 @@ describe('Components: Component binding', function() {
         ko.components.register(testComponentName, {
             synchronous: true,
             template: '<div data-bind="component: { name: \'sub-component\', params: 1 }"></div><div data-bind="component: { name: \'sub-component\', params: 2 }"></div>',
-            viewModel: function() { this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); }; }
+            viewModel: function () { this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); }; }
         });
 
         ko.components.register('sub-component', {
             synchronous: true,
             template: '<span></span>',
-            viewModel: function(params) { this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); }; }
+            viewModel: function (params) { this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); }; }
         });
 
         ko.applyBindings(outerViewModel, testNode);
         expect(renderedComponents).toEqual([ 'sub-component1', 'sub-component2', 'test-component' ]);
     });
 
-    it('koDescendantsComplete waits for inner component to complete even if it is several layers down', function() {
-        this.after(function() {
+    it('koDescendantsComplete waits for inner component to complete even if it is several layers down', function () {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
         var renderedComponents = [];
         ko.components.register(testComponentName, {
             template: '<div data-bind="with: {}"><div data-bind="component: { name: \'sub-component\', params: 1 }"></div></div>',
-            viewModel: function() {
-                this.koDescendantsComplete = function (element) { renderedComponents.push(testComponentName); };
+            viewModel: function () {
+                this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); };
             }
         });
 
         ko.components.register('sub-component', {
             template: '<span data-bind="text: myvalue"></span>',
-            viewModel: function(params) {
+            viewModel: function (params) {
                 this.myvalue = params;
                 this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); };
             }
@@ -348,9 +349,9 @@ describe('Components: Component binding', function() {
         expect(renderedComponents).toEqual([ 'sub-component1', 'test-component' ]);
     });
 
-    it('koDescendantsComplete waits for inner components that are not yet loaded', function() {
+    it('koDescendantsComplete waits for inner components that are not yet loaded', function () {
         this.restoreAfter(window, 'require');
-        this.after(function() {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
@@ -358,7 +359,7 @@ describe('Components: Component binding', function() {
             templateRequirePath = 'path/componentTemplateModule',
             renderedComponents = [];
 
-        window.require = function(modules, callback) {
+        window.require = function (modules, callback) {
             expect(modules.length).toBe(1);
             if (modules[0] === templateRequirePath) {
                 templateProviderCallback = callback;
@@ -369,12 +370,12 @@ describe('Components: Component binding', function() {
 
         ko.components.register(testComponentName, {
             template: '<div data-bind="component: { name: \'sub-component\', params: 1 }"></div><div data-bind="component: { name: \'sub-component\', params: 2 }"></div>',
-            viewModel: function() { this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); }; }
+            viewModel: function () { this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); }; }
         });
 
         ko.components.register('sub-component', {
             template: { require: templateRequirePath },
-            viewModel: function(params) { this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); }; }
+            viewModel: function (params) { this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); }; }
         });
 
         ko.applyBindings(outerViewModel, testNode);
@@ -388,11 +389,11 @@ describe('Components: Component binding', function() {
         expect(renderedComponents).toEqual([ 'sub-component1', 'sub-component2', 'test-component' ]);
     });
 
-    it('Passes nonobservable params to the component', function() {
+    it('Passes nonobservable params to the component', function () {
         // Set up a component that logs its constructor params
         var receivedParams = [];
         ko.components.register(testComponentName, {
-            viewModel: function(params) { receivedParams.push(params); },
+            viewModel: function (params) { receivedParams.push(params); },
             template: 'Ignored'
         });
         testComponentParams.someValue = 123;
@@ -406,11 +407,11 @@ describe('Components: Component binding', function() {
         expect(testComponentParams.someValue).toBe(123); // Just to be sure it doesn't get mutated
     });
 
-    it('Passes through observable params without unwrapping them (so a given component instance can observe them changing)', function() {
+    it('Passes through observable params without unwrapping them (so a given component instance can observe them changing)', function () {
         // Set up a component that logs its constructor params
         var receivedParams = [];
         ko.components.register(testComponentName, {
-            viewModel: function(params) {
+            viewModel: function (params) {
                 receivedParams.push(params);
                 this.someValue = params.someValue;
             },
@@ -432,8 +433,8 @@ describe('Components: Component binding', function() {
         expect(testNode).toContainText('The value is 456.');
     });
 
-    it('Supports observable component names, rebuilding the component if the name changes, disposing the old viewmodel and nodes', function() {
-        this.after(function() {
+    it('Supports observable component names, rebuilding the component if the name changes, disposing the old viewmodel and nodes', function () {
+        this.after(function () {
             ko.components.unregister('component-alpha');
             ko.components.unregister('component-beta');
         });
@@ -442,7 +443,7 @@ describe('Components: Component binding', function() {
         function alphaViewModel(params) { this.alphaValue = params.suppliedValue; this.koDescendantsComplete = function () { renderedComponents.push('alpha'); }; }
         function betaViewModel(params)  { this.betaValue  = params.suppliedValue; this.koDescendantsComplete = function () { renderedComponents.push('beta'); }; }
 
-        alphaViewModel.prototype.dispose = function() {
+        alphaViewModel.prototype.dispose = function () {
             expect(arguments.length).toBe(0);
             this.alphaWasDisposed = true;
 
@@ -509,8 +510,8 @@ describe('Components: Component binding', function() {
         expect(renderedComponents).toEqual(['alpha', 'beta']);
     });
 
-    it('Supports binding to an observable that contains name/params, rebuilding the component if that observable changes, disposing the old viewmodel and nodes', function() {
-        this.after(function() {
+    it('Supports binding to an observable that contains name/params, rebuilding the component if that observable changes, disposing the old viewmodel and nodes', function () {
+        this.after(function () {
             ko.components.unregister('component-alpha');
             ko.components.unregister('component-beta');
         });
@@ -518,7 +519,7 @@ describe('Components: Component binding', function() {
         function alphaViewModel(params) { this.alphaValue = params.suppliedValue; }
         function betaViewModel(params)  { this.betaValue  = params.suppliedValue; }
 
-        alphaViewModel.prototype.dispose = function() {
+        alphaViewModel.prototype.dispose = function () {
             expect(arguments.length).toBe(0);
             this.alphaWasDisposed = true;
 
@@ -580,17 +581,17 @@ describe('Components: Component binding', function() {
         expect(alphaViewModelInstance.alphaWasDisposed).toBe(true);
     });
 
-    it('Rebuilds the component if params change in a way that is forced to unwrap inside the binding, disposing the old viewmodel and nodes', function() {
+    it('Rebuilds the component if params change in a way that is forced to unwrap inside the binding, disposing the old viewmodel and nodes', function () {
         function testViewModel(params) {
             this.myData = params.someData;
         }
-        testViewModel.prototype.dispose = function() {
+        testViewModel.prototype.dispose = function () {
             this.wasDisposed = true;
-        }
+        };
         var renderedCount = 0;
         testViewModel.prototype.koDescendantsComplete = function () {
             renderedCount++;
-        }
+        };
 
         ko.components.register(testComponentName, {
             viewModel: testViewModel,
@@ -628,13 +629,13 @@ describe('Components: Component binding', function() {
         expect(secondViewModelInstance).not.toBe(firstViewModelInstance);
     });
 
-    it('Is possible to pass expressions that can vary observably and evaluate as writable observable instances', function() {
+    it('Is possible to pass expressions that can vary observably and evaluate as writable observable instances', function () {
         // This spec is copied, with small modifications, from customElementBehaviors.js to show that the same component
         // definition can be used with the component binding and with custom elements.
         var constructorCallCount = 0;
         ko.components.register('test-component', {
             template: '<input data-bind="value: myval"/>',
-            viewModel: function(params) {
+            viewModel: function (params) {
                 constructorCallCount++;
                 this.myval = params.somevalue;
 
@@ -692,9 +693,9 @@ describe('Components: Component binding', function() {
         expect(newInnerObservable.getSubscriptionsCount()).toBe(0);
     });
 
-    it('Disposes the viewmodel if the element is cleaned', function() {
+    it('Disposes the viewmodel if the element is cleaned', function () {
         function testViewModel() { }
-        testViewModel.prototype.dispose = function() { this.wasDisposed = true; };
+        testViewModel.prototype.dispose = function () { this.wasDisposed = true; };
 
         ko.components.register(testComponentName, {
             viewModel: testViewModel,
@@ -714,10 +715,10 @@ describe('Components: Component binding', function() {
         expect(viewModelInstance.wasDisposed).toBe(true);
     });
 
-    it('Does not inject the template or instantiate the viewmodel if the element was cleaned before component loading completed', function() {
+    it('Does not inject the template or instantiate the viewmodel if the element was cleaned before component loading completed', function () {
         var numConstructorCalls = 0;
         ko.components.register(testComponentName, {
-            viewModel: function() { numConstructorCalls++; },
+            viewModel: function () { numConstructorCalls++; },
             template: '<div>Should not be used</div>'
         });
 
@@ -733,7 +734,7 @@ describe('Components: Component binding', function() {
         expect(testNode.firstChild).toContainHtml('');
     });
 
-    it('Disregards component load completions that are no longer relevant', function() {
+    it('Disregards component load completions that are no longer relevant', function () {
         // This spec addresses the possibility of a race condition: if you change the
         // component name faster than the component loads complete, then we need to
         // ignore any load completions that don't correspond to the latest name.
@@ -743,7 +744,7 @@ describe('Components: Component binding', function() {
         // Set up a mock module loader, so we can control asynchronous load completion
         this.restoreAfter(window, 'require');
         var requireCallbacks = {};
-        window.require = function(moduleNames, callback) {
+        window.require = function (moduleNames, callback) {
             expect(moduleNames.length).toBe(1); // In this scenario, it always will be
             expect(moduleNames[0] in requireCallbacks).toBe(false); // In this scenario, we only require each module once
             requireCallbacks[moduleNames[0]] = callback;
@@ -755,12 +756,12 @@ describe('Components: Component binding', function() {
         function testViewModel2(params) { constructorCallLog.push([2, params]); }
         function testViewModel3(params) { constructorCallLog.push([3, params]); }
         function testViewModel4(params) { constructorCallLog.push([4, params]); }
-        testViewModel3.prototype.dispose = function() { this.wasDisposed = true; };
+        testViewModel3.prototype.dispose = function () { this.wasDisposed = true; };
         ko.components.register('component-1', { viewModel: { require: 'module-1' }, template: '<div>Component 1 template</div>' });
         ko.components.register('component-2', { viewModel: { require: 'module-2' }, template: '<div>Component 2 template</div>' });
         ko.components.register('component-3', { viewModel: { require: 'module-3' }, template: '<div>Component 3 template</div>' });
         ko.components.register('component-4', { viewModel: { require: 'module-4' }, template: '<div>Component 4 template</div>' });
-        this.after(function() {
+        this.after(function () {
             for (var i = 0; i < 4; i++) {
                 ko.components.unregister('component-' + i);
             }
@@ -823,7 +824,7 @@ describe('Components: Component binding', function() {
         expect(testNode).toContainText('Component 2 template'); // No attempt to modify the DOM
     });
 
-    it('Supports virtual elements', function() {
+    it('Supports virtual elements', function () {
         testNode.innerHTML = 'Hello! <!-- ko component: testComponentBindingValue -->&nbsp;<!-- /ko --> Goodbye.';
         ko.components.register(testComponentName, {
             template: 'Your param is <span data-bind="text: someData">&nbsp;</span>'
@@ -859,8 +860,8 @@ describe('Components: Component binding', function() {
         expect(callbacks).toEqual(1);
     });
 
-    it('Does not call outer component\'s koDescendantsComplete function if an inner component is re-rendered', function() {
-        this.after(function() {
+    it('Does not call outer component\'s koDescendantsComplete function if an inner component is re-rendered', function () {
+        this.after(function () {
             ko.components.unregister('sub-component');
         });
 
@@ -868,12 +869,12 @@ describe('Components: Component binding', function() {
         var observable = ko.observable(1);
         ko.components.register(testComponentName, {
             template: '<div data-bind="component: { name: \'sub-component\', params: $root.observable }"></div>',
-            viewModel: function() { this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); }; }
+            viewModel: function () { this.koDescendantsComplete = function () { renderedComponents.push(testComponentName); }; }
         });
 
         ko.components.register('sub-component', {
             template: '<span></span>',
-            viewModel: function(params) { this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); }; }
+            viewModel: function (params) { this.koDescendantsComplete = function () { renderedComponents.push('sub-component' + params); }; }
         });
 
         outerViewModel.observable = observable;
@@ -888,28 +889,28 @@ describe('Components: Component binding', function() {
         expect(renderedComponents).toEqual([ 'sub-component1', 'test-component', 'sub-component2' ]);
     });
 
-    it('Works with applyBindingsToNode', function() {
+    it('Works with applyBindingsToNode', function () {
         ko.components.register(testComponentName, {
             template: 'Parent is outer view model: <span data-bind="text: $parent.isOuterViewModel"></span>'
         });
-        testNode.innerHTML = "<div></div>";
+        testNode.innerHTML = '<div></div>';
         ko.applyBindingsToNode(testNode.childNodes[0], {component: {name: testComponentName}}, outerViewModel);
         jasmine.Clock.tick(1);
 
         expect(testNode.childNodes[0]).toContainText('Parent is outer view model: true');
     });
 
-    describe('Does not automatically subscribe to any observables you evaluate during createViewModel or a viewmodel constructor', function() {
+    describe('Does not automatically subscribe to any observables you evaluate during createViewModel or a viewmodel constructor', function () {
         // This clarifies that, if a developer wants to react when some observable parameter
         // changes, then it's their responsibility to subscribe to it or use a computed.
         // We don't rebuild the component just because you evaluated an observable from inside
         // your viewmodel constructor, just like we don't if you evaluate one elsewhere
         // in the viewmodel code.
 
-        it('when loaded asynchronously', function() {
+        it('when loaded asynchronously', function () {
             ko.components.register(testComponentName, {
                 viewModel: {
-                    createViewModel: function(params, componentInfo) {
+                    createViewModel: function (params, componentInfo) {
                         return { someData: params.someData() };
                     }
                 },
@@ -929,11 +930,11 @@ describe('Components: Component binding', function() {
             expect(testNode).toContainText('First');
         });
 
-        it('when loaded synchronously', function() {
+        it('when loaded synchronously', function () {
             ko.components.register(testComponentName, {
                 synchronous: true,
                 viewModel: {
-                    createViewModel: function(params, componentInfo) {
+                    createViewModel: function (params, componentInfo) {
                         return { someData: params.someData() };
                     }
                 },
@@ -951,11 +952,11 @@ describe('Components: Component binding', function() {
             expect(testNode).toContainText('First');
         });
 
-        it('when cached component is loaded synchronously', function() {
+        it('when cached component is loaded synchronously', function () {
             ko.components.register(testComponentName, {
                 synchronous: true,
                 viewModel: {
-                    createViewModel: function(params, componentInfo) {
+                    createViewModel: function (params, componentInfo) {
                         return { someData: params.someData() };
                     }
                 },
@@ -963,7 +964,7 @@ describe('Components: Component binding', function() {
             });
 
             // Load the component manually so that the next load happens from the cache
-            ko.components.get(testComponentName, function() {});
+            ko.components.get(testComponentName, function () {});
 
             // Bind an instance
             testComponentParams.someData = ko.observable('First');
